@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: #fff;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, #e74c3c, #e67e22);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            transition: transform 0.4s ease-in-out;
+            position: fixed;
+            top: 20px;
+            left: -280px;
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .sidebar.open {
+            transform: translateX(280px);
+            background: linear-gradient(135deg, #c0392b, #d35400);
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #e74c3c, #f1c40f);
+            color: #fff;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s, background 0.5s;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.15);
+            background: linear-gradient(135deg, #c0392b, #f39c12);
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .search-bar:focus {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .city-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .city-list li {
+            padding: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            margin-bottom: 12px;
+            border-radius: 12px;
+            transition: transform 0.4s, background 0.5s;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .city-list li:hover {
+            transform: scale(1.08);
+            background: linear-gradient(135deg, #6c3483, #7d3c98);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #f1c40f;
+            text-shadow: 0 0 15px rgba(241, 196, 15, 0.8);
+        }
+
+        .weather-card {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .current-weather {
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            padding: 25px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            animation: fadeInCard 0.5s ease-in-out;
+        }
+
+        @keyframes fadeInCard {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .weather-emoji {
+            font-size: 70px;
+            margin-bottom: 15px;
+        }
+
+        .city-info {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .temperature {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .description {
+            font-size: 20px;
+            text-transform: capitalize;
+            margin-bottom: 15px;
+            color: #e6e6e6;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 18px;
+        }
+
+        .details div {
+            background: linear-gradient(135deg, #e74c3c, #e67e22);
+            padding: 12px;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .details div:hover {
+            transform: translateY(-5px);
+        }
+
+        .hourly-forecast {
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+            padding: 25px;
+            border-radius: 18px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+            white-space: nowrap;
+            animation: fadeInCard 0.5s ease-in-out;
+        }
+
+        .hourly-item {
+            display: inline-block;
+            margin: 0 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.4s, background 0.5s;
+            animation: slideInHourly 0.5s ease-out;
+        }
+
+        @keyframes slideInHourly {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .hourly-item:hover {
+            transform: scale(1.12);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .hour, .hour-temp {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .hour-emoji {
+            font-size: 28px;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 18px;
+            text-align: center;
+            display: none;
+        }
+
+        .time-shift {
+            width: 100%;
+            margin-top: 10px;
+            padding: 5px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .time-shift::-webkit-slider-thumb {
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #f1c40f;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .time-shift::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #f1c40f;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .chat-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: #fff;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s, background 0.5s;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.2);
+            background: linear-gradient(135deg, #6c3483, #7d3c98);
+        }
+
+        .chat-container {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 350px;
+            max-height: 550px;
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            border-radius: 18px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.4s, opacity 0.4s;
+            z-index: 12;
+        }
+
+        .chat-container.open {
+            display: flex;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .chat-container.rainy {
+            background: linear-gradient(135deg, #2980b9, #27ae60);
+        }
+
+        .chat-container.sunny {
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: #fff;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-chat {
+            cursor: pointer;
+            font-size: 22px;
+            transition: transform 0.3s;
+        }
+
+        .close-chat:hover {
+            transform: rotate(180deg);
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.1);
+            min-height: 60px;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            padding: 12px 15px;
+            border-radius: 12px;
+            max-width: 85%;
+            font-size: 16px;
+            line-height: 1.5;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            word-break: break-word;
+            animation: slideInMessage 0.5s ease-out;
+        }
+
+        @keyframes slideInMessage {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #e74c3c, #e67e22);
+            color: #fff;
+            margin-left: auto;
+        }
+
+        .ai-message {
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            color: #fff;
+            margin-right: auto;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .typing-indicator {
+            display: none;
+            margin-bottom: 12px;
+            padding: 10px;
+            max-width: 85%;
+            margin-right: auto;
+            word-break: break-word;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: typing 1s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .chat-footer {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .chat-input:focus {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: #fff;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            margin-left: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            transition: transform 0.4s, background 0.5s;
+        }
+
+        .send-button:hover {
+            transform: scale(1.1);
+            background: linear-gradient(135deg, #6c3483, #7d3c98);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 10px;
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 220px;
+                left: -220px;
+                top: 10px;
+                height: calc(100vh - 20px);
+            }
+
+            .sidebar.open {
+                transform: translateX(220px);
+            }
+
+            .sidebar-toggle {
+                top: 10px;
+                left: 10px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            .search-bar {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            .city-list li {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .weather-card {
+                grid-template-columns: 1fr;
+            }
+
+            .current-weather, .hourly-forecast {
+                padding: 15px;
+            }
+
+            .weather-emoji {
+                font-size: 50px;
+            }
+
+            .city-info, .temperature {
+                font-size: 20px;
+            }
+
+            .description {
+                font-size: 16px;
+            }
+
+            .details {
+                font-size: 14px;
+            }
+
+            .hourly-item {
+                margin: 0 8px;
+                padding: 10px;
+            }
+
+            .hour, .hour-temp {
+                font-size: 14px;
+            }
+
+            .hour-emoji {
+                font-size: 20px;
+            }
+
+            .chat-button {
+                bottom: 15px;
+                right: 15px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            .chat-container {
+                width: 90%;
+                max-width: 300px;
+                bottom: 80px;
+                right: 15px;
+                max-height: 400px;
+            }
+
+            .chat-header {
+                font-size: 16px;
+                padding: 10px;
+            }
+
+            .message, .typing-indicator {
+                font-size: 13px;
+                padding: 8px;
+            }
+
+            .chat-input {
+                font-size: 13px;
+                padding: 8px;
+            }
+
+            .send-button {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .typing-indicator span {
+                width: 7px;
+                height: 7px;
+                margin-right: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+        <div class="sidebar" id="sidebar">
+            <h3>Search City</h3>
+            <input type="text" id="cityInput" placeholder="Type a city...">
+            <ul id="cityList">
+                            <!-- Combined Indian and Global Cities -->
+            <li data-city="Abidjan,CI">Abidjan, Côte d'Ivoire</li>
+            <li data-city="Abuja,NG">Abuja, Nigeria</li>
+            <li data-city="Accra,GH">Accra, Ghana</li>
+            <li data-city="Adelaide,AU">Adelaide, Australia</li>
+            <li data-city="Adilabad,IN">Adilabad, India</li>
+            <li data-city="Agartala,IN">Agartala, India</li>
+            <li data-city="Agra,IN">Agra, India</li>
+            <li data-city="Ahmedabad,IN">Ahmedabad, India</li>
+            <li data-city="Ahmednagar,IN">Ahmednagar, India</li>
+            <li data-city="Aizawl,IN">Aizawl, India</li>
+            <li data-city="Ajmer,IN">Ajmer, India</li>
+            <li data-city="Akola,IN">Akola, India</li>
+            <li data-city="Aleppo,SY">Aleppo, Syria</li>
+            <li data-city="Alexandria,EG">Alexandria, Egypt</li>
+            <li data-city="Aligarh,IN">Aligarh, India</li>
+            <li data-city="Alappuzha,IN">Alappuzha, India</li>
+            <li data-city="Algiers,DZ">Algiers, Algeria</li>
+            <li data-city="Allahabad,IN">Allahabad, India</li>
+            <li data-city="Almora,IN">Almora, India</li>
+            <li data-city="Alwar,IN">Alwar, India</li>
+            <li data-city="Amaravati,IN">Amaravati, India</li>
+            <li data-city="Ambala,IN">Ambala, India</li>
+            <li data-city="Ambedkar Nagar,IN">Ambedkar Nagar, India</li>
+            <li data-city="Amman,JO">Amman, Jordan</li>
+            <li data-city="Amravati,IN">Amravati, India</li>
+            <li data-city="Amreli,IN">Amreli, India</li>
+            <li data-city="Amritsar,IN">Amritsar, India</li>
+            <li data-city="Anand,IN">Anand, India</li>
+            <li data-city="Anantapur,IN">Anantapur, India</li>
+            <li data-city="Ankara,TR">Ankara, Turkey</li>
+            <li data-city="Ankleshwar,IN">Ankleshwar, India</li>
+            <li data-city="Antananarivo,MG">Antananarivo, Madagascar</li>
+            <li data-city="Arrah,IN">Arrah, India</li>
+            <li data-city="Asansol,IN">Asansol, India</li>
+            <li data-city="Ashgabat,TM">Ashgabat, Turkmenistan</li>
+            <li data-city="Asmara,ER">Asmara, Eritrea</li>
+            <li data-city="Atlanta,US">Atlanta, USA</li>
+            <li data-city="Auckland,NZ">Auckland, New Zealand</li>
+            <li data-city="Aurangabad,IN">Aurangabad, India</li>
+            <li data-city="Azamgarh,IN">Azamgarh, India</li>
+            <li data-city="Baghdad,IQ">Baghdad, Iraq</li>
+            <li data-city="Bahraich,IN">Bahraich, India</li>
+            <li data-city="Baku,AZ">Baku, Azerbaijan</li>
+            <li data-city="Balangir,IN">Balangir, India</li>
+            <li data-city="Balasore,IN">Balasore, India</li>
+            <li data-city="Ballia,IN">Ballia, India</li>
+            <li data-city="Bamako,ML">Bamako, Mali</li>
+            <li data-city="Banda,IN">Banda, India</li>
+            <li data-city="Bandung,ID">Bandung, Indonesia</li>
+            <li data-city="Bangalore,IN">Bangalore, India</li>
+            <li data-city="Bangkok,TH">Bangkok, Thailand</li>
+            <li data-city="Bangui,CF">Bangui, Central African Republic</li>
+            <li data-city="Bankura,IN">Bankura, India</li>
+            <li data-city="Banswara,IN">Banswara, India</li>
+            <li data-city="Baramulla,IN">Baramulla, India</li>
+            <li data-city="Barcelona,ES">Barcelona, Spain</li>
+            <li data-city="Barddhaman,IN">Barddhaman, India</li>
+            <li data-city="Bareilly,IN">Bareilly, India</li>
+            <li data-city="Barmer,IN">Barmer, India</li>
+            <li data-city="Barnala,IN">Barnala, India</li>
+            <li data-city="Barpeta,IN">Barpeta, India</li>
+            <li data-city="Barranquilla,CO">Barranquilla, Colombia</li>
+            <li data-city="Basrah,IQ">Basrah, Iraq</li>
+            <li data-city="Basti,IN">Basti, India</li>
+            <li data-city="Batala,IN">Batala, India</li>
+            <li data-city="Beed,IN">Beed, India</li>
+            <li data-city="Begusarai,IN">Begusarai, India</li>
+            <li data-city="Beirut,LB">Beirut, Lebanon</li>
+            <li data-city="Belgaum,IN">Belgaum, India</li>
+            <li data-city="Belo Horizonte,BR">Belo Horizonte, Brazil</li>
+            <li data-city="Bellary,IN">Bellary, India</li>
+            <li data-city="Berlin,DE">Berlin, Germany</li>
+            <li data-city="Berhampur,IN">Berhampur, India</li>
+            <li data-city="Bettiah,IN">Bettiah, India</li>
+            <li data-city="Bhadrak,IN">Bhadrak, India</li>
+            <li data-city="Bhagalpur,IN">Bhagalpur, India</li>
+            <li data-city="Bhandara,IN">Bhandara, India</li>
+            <li data-city="Bharatpur,IN">Bharatpur, India</li>
+            <li data-city="Bhavnagar,IN">Bhavnagar, India</li>
+            <li data-city="Bhilai,IN">Bhilai, India</li>
+            <li data-city="Bhilwara,IN">Bhilwara, India</li>
+            <li data-city="Bhind,IN">Bhind, India</li>
+            <li data-city="Bhiwandi,IN">Bhiwandi, India</li>
+            <li data-city="Bhiwani,IN">Bhiwani, India</li>
+            <li data-city="Bhopal,IN">Bhopal, India</li>
+            <li data-city="Bhubaneswar,IN">Bhubaneswar, India</li>
+            <li data-city="Bikaner,IN">Bikaner, India</li>
+            <li data-city="Bilaspur,IN">Bilaspur, India</li>
+            <li data-city="Bokaro,IN">Bokaro, India</li>
+            <li data-city="Bongaigaon,IN">Bongaigaon, India</li>
+            <li data-city="Boston,US">Boston, USA</li>
+            <li data-city="Botad,IN">Botad, India</li>
+            <li data-city="Brasília,BR">Brasília, Brazil</li>
+            <li data-city="Brisbane,AU">Brisbane, Australia</li>
+            <li data-city="Budaun,IN">Budaun, India</li>
+            <li data-city="Buenos Aires,AR">Buenos Aires, Argentina</li>
+            <li data-city="Bulandshahr,IN">Bulandshahr, India</li>
+            <li data-city="Bundi,IN">Bundi, India</li>
+            <li data-city="Burhanpur,IN">Burhanpur, India</li>
+            <li data-city="Bursa,TR">Bursa, Turkey</li>
+            <li data-city="Busan,KR">Busan, South Korea</li>
+            <li data-city="Buxar,IN">Buxar, India</li>
+            <li data-city="Cairo,EG">Cairo, Egypt</li>
+            <li data-city="Calgary,CA">Calgary, Canada</li>
+            <li data-city="Campinas,BR">Campinas, Brazil</li>
+            <li data-city="Cape Town,ZA">Cape Town, South Africa</li>
+            <li data-city="Caracas,VE">Caracas, Venezuela</li>
+            <li data-city="Casablanca,MA">Casablanca, Morocco</li>
+            <li data-city="Chandigarh,IN">Chandigarh, India</li>
+            <li data-city="Chandrapur,IN">Chandrapur, India</li>
+            <li data-city="Chengdu,CN">Chengdu, China</li>
+            <li data-city="Chennai,IN">Chennai, India</li>
+            <li data-city="Chhapra,IN">Chhapra, India</li>
+            <li data-city="Chhindwara,IN">Chhindwara, India</li>
+            <li data-city="Chidambaram,IN">Chidambaram, India</li>
+            <li data-city="Chikkamagaluru,IN">Chikkamagaluru, India</li>
+            <li data-city="Chittoor,IN">Chittoor, India</li>
+            <li data-city="Chongqing,CN">Chongqing, China</li>
+            <li data-city="Christchurch,NZ">Christchurch, New Zealand</li>
+            <li data-city="Coimbatore,IN">Coimbatore, India</li>
+            <li data-city="Conakry,GN">Conakry, Guinea</li>
+            <li data-city="Cuddalore,IN">Cuddalore, India</li>
+            <li data-city="Curitiba,BR">Curitiba, Brazil</li>
+            <li data-city="Cuttack,IN">Cuttack, India</li>
+            <li data-city="Da Nang,VN">Da Nang, Vietnam</li>
+            <li data-city="Dakar,SN">Dakar, Senegal</li>
+            <li data-city="Dalian,CN">Dalian, China</li>
+            <li data-city="Dallas,US">Dallas, USA</li>
+            <li data-city="Daltonganj,IN">Daltonganj, India</li>
+            <li data-city="Daman,IN">Daman, India</li>
+            <li data-city="Damascus,SY">Damascus, Syria</li>
+            <li data-city="Damoh,IN">Damoh, India</li>
+            <li data-city="Dar Es Salaam,TZ">Dar Es Salaam, Tanzania</li>
+            <li data-city="Darbhanga,IN">Darbhanga, India</li>
+            <li data-city="Darjeeling,IN">Darjeeling, India</li>
+            <li data-city="Davanagere,IN">Davanagere, India</li>
+            <li data-city="Dehradun,IN">Dehradun, India</li>
+            <li data-city="Delhi,IN">Delhi, India</li>
+            <li data-city="Deoria,IN">Deoria, India</li>
+            <li data-city="Dewas,IN">Dewas, India</li>
+            <li data-city="Dhaka,BD">Dhaka, Bangladesh</li>
+            <li data-city="Dhanbad,IN">Dhanbad, India</li>
+            <li data-city="Dhar,IN">Dhar, India</li>
+            <li data-city="Dharmapuri,IN">Dharmapuri, India</li>
+            <li data-city="Dharwad,IN">Dharwad, India</li>
+            <li data-city="Dhenkanal,IN">Dhenkanal, India</li>
+            <li data-city="Dhule,IN">Dhule, India</li>
+            <li data-city="Dibrugarh,IN">Dibrugarh, India</li>
+            <li data-city="Dimapur,IN">Dimapur, India</li>
+            <li data-city="Dindigul,IN">Dindigul, India</li>
+            <li data-city="Diu,IN">Diu, India</li>
+            <li data-city="Doha,QA">Doha, Qatar</li>
+            <li data-city="Douala,CM">Douala, Cameroon</li>
+            <li data-city="Dubai,AE">Dubai, UAE</li>
+            <li data-city="Durg,IN">Durg, India</li>
+            <li data-city="Durgapur,IN">Durgapur, India</li>
+            <li data-city="Edmonton,CA">Edmonton, Canada</li>
+            <li data-city="Eluru,IN">Eluru, India</li>
+            <li data-city="Erode,IN">Erode, India</li>
+            <li data-city="Etah,IN">Etah, India</li>
+            <li data-city="Etawah,IN">Etawah, India</li>
+            <li data-city="Faizabad,IN">Faizabad, India</li>
+            <li data-city="Faridabad,IN">Faridabad, India</li>
+            <li data-city="Faridkot,IN">Faridkot, India</li>
+            <li data-city="Farrukhabad,IN">Farrukhabad, India</li>
+            <li data-city="Fatehpur,IN">Fatehpur, India</li>
+            <li data-city="Firozabad,IN">Firozabad, India</li>
+            <li data-city="Firozpur,IN">Firozpur, India</li>
+            <li data-city="Fortaleza,BR">Fortaleza, Brazil</li>
+            <li data-city="Freetown,SL">Freetown, Sierra Leone</li>
+            <li data-city="Fukuoka,JP">Fukuoka, Japan</li>
+            <li data-city="Fuzhou,CN">Fuzhou, China</li>
+            <li data-city="Gadag,IN">Gadag, India</li>
+            <li data-city="Gandhidham,IN">Gandhidham, India</li>
+            <li data-city="Gandhinagar,IN">Gandhinagar, India</li>
+            <li data-city="Ganganagar,IN">Ganganagar, India</li>
+            <li data-city="Gangtok,IN">Gangtok, India</li>
+            <li data-city="Gaya,IN">Gaya, India</li>
+            <li data-city="Ghaziabad,IN">Ghaziabad, India</li>
+            <li data-city="Ghazipur,IN">Ghazipur, India</li>
+            <li data-city="Giza,EG">Giza, Egypt</li>
+            <li data-city="Giridih,IN">Giridih, India</li>
+            <li data-city="Goa,IN">Goa, India</li>
+            <li data-city="Godhra,IN">Godhra, India</li>
+            <li data-city="Goiânia,BR">Goiânia, Brazil</li>
+            <li data-city="Gonda,IN">Gonda, India</li>
+            <li data-city="Gorakhpur,IN">Gorakhpur, India</li>
+            <li data-city="Guangzhou,CN">Guangzhou, China</li>
+            <li data-city="Guatemala City,GT">Guatemala City, Guatemala</li>
+            <li data-city="Guayaquil,EC">Guayaquil, Ecuador</li>
+            <li data-city="Gulbarga,IN">Gulbarga, India</li>
+            <li data-city="Guntur,IN">Guntur, India</li>
+            <li data-city="Gurgaon,IN">Gurgaon, India</li>
+            <li data-city="Guwahati,IN">Guwahati, India</li>
+            <li data-city="Gwalior,IN">Gwalior, India</li>
+            <li data-city="Haldia,IN">Haldia, India</li>
+            <li data-city="Haldwani,IN">Haldwani, India</li>
+            <li data-city="Hamirpur,IN">Hamirpur, India</li>
+            <li data-city="Hangzhou,CN">Hangzhou, China</li>
+            <li data-city="Hanoi,VN">Hanoi, Vietnam</li>
+            <li data-city="Hapur,IN">Hapur, India</li>
+            <li data-city="Harare,ZW">Harare, Zimbabwe</li>
+            <li data-city="Hardoi,IN">Hardoi, India</li>
+            <li data-city="Haridwar,IN">Haridwar, India</li>
+            <li data-city="Hassan,IN">Hassan, India</li>
+            <li data-city="Hathras,IN">Hathras, India</li>
+            <li data-city="Havana,CU">Havana, Cuba</li>
+            <li data-city="Haveri,IN">Haveri, India</li>
+            <li data-city="Hazaribagh,IN">Hazaribagh, India</li>
+            <li data-city="Hindaun,IN">Hindaun, India</li>
+            <li data-city="Hinganghat,IN">Hinganghat, India</li>
+            <li data-city="Hisar,IN">Hisar, India</li>
+            <li data-city="Ho Chi Minh City,VN">Ho Chi Minh City, Vietnam</li>
+            <li data-city="Hong Kong,HK">Hong Kong, China</li>
+            <li data-city="Honolulu,US">Honolulu, USA</li>
+            <li data-city="Hoshangabad,IN">Hoshangabad, India</li>
+            <li data-city="Hoshiarpur,IN">Hoshiarpur, India</li>
+            <li data-city="Houston,US">Houston, USA</li>
+            <li data-city="Howrah,IN">Howrah, India</li>
+            <li data-city="Hubli-Dharwad,IN">Hubli-Dharwad, India</li>
+            <li data-city="Hyderabad,IN">Hyderabad, India</li>
+            <li data-city="Ibadan,NG">Ibadan, Nigeria</li>
+            <li data-city="Imphal,IN">Imphal, India</li>
+            <li data-city="Incheon,KR">Incheon, South Korea</li>
+            <li data-city="Indore,IN">Indore, India</li>
+            <li data-city="Istanbul,TR">Istanbul, Turkey</li>
+            <li data-city="Itanagar,IN">Itanagar, India</li>
+            <li data-city="Izmir,TR">Izmir, Turkey</li>
+            <li data-city="Jabalpur,IN">Jabalpur, India</li>
+            <li data-city="Jaipur,IN">Jaipur, India</li>
+            <li data-city="Jaisalmer,IN">Jaisalmer, India</li>
+            <li data-city="Jakarta,ID">Jakarta, Indonesia</li>
+            <li data-city="Jalandhar,IN">Jalandhar, India</li>
+            <li data-city="Jalgaon,IN">Jalgaon, India</li>
+            <li data-city="Jalna,IN">Jalna, India</li>
+            <li data-city="Jalpaiguri,IN">Jalpaiguri, India</li>
+            <li data-city="Jammu,IN">Jammu, India</li>
+            <li data-city="Jamnagar,IN">Jamnagar, India</li>
+            <li data-city="Jamshedpur,IN">Jamshedpur, India</li>
+            <li data-city="Jaunpur,IN">Jaunpur, India</li>
+            <li data-city="Jeddah,SA">Jeddah, Saudi Arabia</li>
+            <li data-city="Jerusalem,IL">Jerusalem, Israel</li>
+            <li data-city="Jhansi,IN">Jhansi, India</li>
+            <li data-city="Jhunjhunu,IN">Jhunjhunu, India</li>
+            <li data-city="Jind,IN">Jind, India</li>
+            <li data-city="Jodhpur,IN">Jodhpur, India</li>
+            <li data-city="Johannesburg,ZA">Johannesburg, South Africa</li>
+            <li data-city="Jorhat,IN">Jorhat, India</li>
+            <li data-city="Juba,SS">Juba, South Sudan</li>
+            <li data-city="Junagadh,IN">Junagadh, India</li>
+            <li data-city="Kadapa,IN">Kadapa, India</li>
+            <li data-city="Kakinada,IN">Kakinada, India</li>
+            <li data-city="Kalol,IN">Kalol, India</li>
+            <li data-city="Kalyan-Dombivli,IN">Kalyan-Dombivli, India</li>
+            <li data-city="Kampala,UG">Kampala, Uganda</li>
+            <li data-city="Kano,NG">Kano, Nigeria</li>
+            <li data-city="Kanchipuram,IN">Kanchipuram, India</li>
+            <li data-city="Kandla,IN">Kandla, India</li>
+            <li data-city="Kangra,IN">Kangra, India</li>
+            <li data-city="Kannauj,IN">Kannauj, India</li>
+            <li data-city="Kannur,IN">Kannur, India</li>
+            <li data-city="Kanpur,IN">Kanpur, India</li>
+            <li data-city="Kanyakumari,IN">Kanyakumari, India</li>
+            <li data-city="Kapurthala,IN">Kapurthala, India</li>
+            <li data-city="Karachi,PK">Karachi, Pakistan</li>
+            <li data-city="Karimnagar,IN">Karimnagar, India</li>
+            <li data-city="Karnal,IN">Karnal, India</li>
+            <li data-city="Karur,IN">Karur, India</li>
+            <li data-city="Kasaragod,IN">Kasaragod, India</li>
+            <li data-city="Katihar,IN">Katihar, India</li>
+            <li data-city="Katni,IN">Katni, India</li>
+            <li data-city="Khammam,IN">Khammam, India</li>
+            <li data-city="Khandwa,IN">Khandwa, India</li>
+            <li data-city="Khargone,IN">Khargone, India</li>
+            <li data-city="Khartoum,SD">Khartoum, Sudan</li>
+            <li data-city="Kheda,IN">Kheda, India</li>
+            <li data-city="Kishangarh,IN">Kishangarh, India</li>
+            <li data-city="Kochi,IN">Kochi, India</li>
+            <li data-city="Kohima,IN">Kohima, India</li>
+            <li data-city="Kolhapur,IN">Kolhapur, India</li>
+            <li data-city="Kolkata,IN">Kolkata, India</li>
+            <li data-city="Kollam,IN">Kollam, India</li>
+            <li data-city="Korba,IN">Korba, India</li>
+            <li data-city="Kota,IN">Kota, India</li>
+            <li data-city="Kottayam,IN">Kottayam, India</li>
+            <li data-city="Kozhikode,IN">Kozhikode, India</li>
+            <li data-city="Krishnanagar,IN">Krishnanagar, India</li>
+            <li data-city="Kuala Lumpur,MY">Kuala Lumpur, Malaysia</li>
+            <li data-city="Kumbakonam,IN">Kumbakonam, India</li>
+            <li data-city="Kurnool,IN">Kurnool, India</li>
+            <li data-city="Kurukshetra,IN">Kurukshetra, India</li>
+            <li data-city="Kuwait City,KW">Kuwait City, Kuwait</li>
+            <li data-city="Lagos,NG">Lagos, Nigeria</li>
+            <li data-city="Lahore,PK">Lahore, Pakistan</li>
+            <li data-city="Lakhimpur,IN">Lakhimpur, India</li>
+            <li data-city="La Paz,BO">La Paz, Bolivia</li>
+            <li data-city="Latur,IN">Latur, India</li>
+            <li data-city="Lima,PE">Lima, Peru</li>
+            <li data-city="London,GB">London, United Kingdom</li>
+            <li data-city="Lomé,TG">Lomé, Togo</li>
+            <li data-city="Los Angeles,US">Los Angeles, USA</li>
+            <li data-city="Luanda,AO">Luanda, Angola</li>
+            <li data-city="Lucknow,IN">Lucknow, India</li>
+            <li data-city="Ludhiana,IN">Ludhiana, India</li>
+            <li data-city="Lusaka,ZM">Lusaka, Zambia</li>
+            <li data-city="Madurai,IN">Madurai, India</li>
+            <li data-city="Mahbubnagar,IN">Mahbubnagar, India</li>
+            <li data-city="Mainpuri,IN">Mainpuri, India</li>
+            <li data-city="Malappuram,IN">Malappuram, India</li>
+            <li data-city="Manaus,BR">Manaus, Brazil</li>
+            <li data-city="Mandi,IN">Mandi, India</li>
+            <li data-city="Mangalore,IN">Mangalore, India</li>
+            <li data-city="Manila,PH">Manila, Philippines</li>
+            <li data-city="Maputo,MZ">Maputo, Mozambique</li>
+            <li data-city="Maracaibo,VE">Maracaibo, Venezuela</li>
+            <li data-city="Mathura,IN">Mathura, India</li>
+            <li data-city="Mau,IN">Mau, India</li>
+            <li data-city="Mecca,SA">Mecca, Saudi Arabia</li>
+            <li data-city="Medan,ID">Medan, Indonesia</li>
+            <li data-city="Medellín,CO">Medellín, Colombia</li>
+            <li data-city="Meerut,IN">Meerut, India</li>
+            <li data-city="Mehsana,IN">Mehsana, India</li>
+            <li data-city="Melbourne,AU">Melbourne, Australia</li>
+            <li data-city="Mexico City,MX">Mexico City, Mexico</li>
+            <li data-city="Miami,US">Miami, USA</li>
+            <li data-city="Mirzapur,IN">Mirzapur, India</li>
+            <li data-city="Moga,IN">Moga, India</li>
+            <li data-city="Mogadishu,SO">Mogadishu, Somalia</li>
+            <li data-city="Monrovia,LR">Monrovia, Liberia</li>
+            <li data-city="Montevideo,UY">Montevideo, Uruguay</li>
+            <li data-city="Montreal,CA">Montreal, Canada</li>
+            <li data-city="Moradabad,IN">Moradabad, India</li>
+            <li data-city="Morena,IN">Morena, India</li>
+            <li data-city="Moscow,RU">Moscow, Russia</li>
+            <li data-city="Motihari,IN">Motihari, India</li>
+            <li data-city="Muktsar,IN">Muktsar, India</li>
+            <li data-city="Mumbai,IN">Mumbai, India</li>
+            <li data-city="Munger,IN">Munger, India</li>
+            <li data-city="Muscat,OM">Muscat, Oman</li>
+            <li data-city="Muzaffarnagar,IN">Muzaffarnagar, India</li>
+            <li data-city="Muzaffarpur,IN">Muzaffarpur, India</li>
+            <li data-city="Mysore,IN">Mysore, India</li>
+            <li data-city="Nadia,IN">Nadia, India</li>
+            <li data-city="Nagaon,IN">Nagaon, India</li>
+            <li data-city="Nagaur,IN">Nagaur, India</li>
+            <li data-city="Nagoya,JP">Nagoya, Japan</li>
+            <li data-city="Nagpur,IN">Nagpur, India</li>
+            <li data-city="Nairobi,KE">Nairobi, Kenya</li>
+            <li data-city="Nanded,IN">Nanded, India</li>
+            <li data-city="Nandurbar,IN">Nandurbar, India</li>
+            <li data-city="Nandyal,IN">Nandyal, India</li>
+            <li data-city="Nanjing,CN">Nanjing, China</li>
+            <li data-city="Narsinghpur,IN">Narsinghpur, India</li>
+            <li data-city="Nashik,IN">Nashik, India</li>
+            <li data-city="Navi Mumbai,IN">Navi Mumbai, India</li>
+            <li data-city="Navsari,IN">Navsari, India</li>
+            <li data-city="N'Djamena,TD">N'Djamena, Chad</li>
+            <li data-city="Nellore,IN">Nellore, India</li>
+            <li data-city="New York,US">New York, USA</li>
+            <li data-city="Niamey,NE">Niamey, Niger</li>
+            <li data-city="Ningbo,CN">Ningbo, China</li>
+            <li data-city="Nizamabad,IN">Nizamabad, India</li>
+            <li data-city="Noida,IN">Noida, India</li>
+            <li data-city="Nouakchott,MR">Nouakchott, Mauritania</li>
+            <li data-city="Ongole,IN">Ongole, India</li>
+            <li data-city="Osaka,JP">Osaka, Japan</li>
+            <li data-city="Ottawa,CA">Ottawa, Canada</li>
+            <li data-city="Ouagadougou,BF">Ouagadougou, Burkina Faso</li>
+            <li data-city="Palakkad,IN">Palakkad, India</li>
+            <li data-city="Palanpur,IN">Palanpur, India</li>
+            <li data-city="Pali,IN">Pali, India</li>
+            <li data-city="Panaji,IN">Panaji, India</li>
+            <li data-city="Panchkula,IN">Panchkula, India</li>
+            <li data-city="Panama City,PA">Panama City, Panama</li>
+            <li data-city="Panipat,IN">Panipat, India</li>
+            <li data-city="Parbhani,IN">Parbhani, India</li>
+            <li data-city="Paris,FR">Paris, France</li>
+            <li data-city="Patan,IN">Patan, India</li>
+            <li data-city="Pathanamthitta,IN">Pathanamthitta, India</li>
+            <li data-city="Patiala,IN">Patiala, India</li>
+            <li data-city="Patna,IN">Patna, India</li>
+            <li data-city="Perth,AU">Perth, Australia</li>
+            <li data-city="Phnom Penh,KH">Phnom Penh, Cambodia</li>
+            <li data-city="Phoenix,US">Phoenix, USA</li>
+            <li data-city="Philadelphia,US">Philadelphia, USA</li>
+            <li data-city="Pilibhit,IN">Pilibhit, India</li>
+            <li data-city="Pondicherry,IN">Pondicherry, India</li>
+            <li data-city="Porbandar,IN">Porbandar, India</li>
+            <li data-city="Port Blair,IN">Port Blair, India</li>
+            <li data-city="Port Louis,MU">Port Louis, Mauritius</li>
+            <li data-city="Port-au-Prince,HT">Port-au-Prince, Haiti</li>
+            <li data-city="Porto Alegre,BR">Porto Alegre, Brazil</li>
+            <li data-city="Pratapgarh,IN">Pratapgarh, India</li>
+            <li data-city="Pudukkottai,IN">Pudukkottai, India</li>
+            <li data-city="Pune,IN">Pune, India</li>
+            <li data-city="Puri,IN">Puri, India</li>
+            <li data-city="Purnia,IN">Purnia, India</li>
+            <li data-city="Pyongyang,KP">Pyongyang, North Korea</li>
+            <li data-city="Quito,EC">Quito, Ecuador</li>
+            <li data-city="Rabat,MA">Rabat, Morocco</li>
+            <li data-city="Raichur,IN">Raichur, India</li>
+            <li data-city="Raigarh,IN">Raigarh, India</li>
+            <li data-city="Raipur,IN">Raipur, India</li>
+            <li data-city="Rajahmundry,IN">Rajahmundry, India</li>
+            <li data-city="Rajkot,IN">Rajkot, India</li>
+            <li data-city="Rajouri,IN">Rajouri, India</li>
+            <li data-city="Rampur,IN">Rampur, India</li>
+            <li data-city="Ranchi,IN">Ranchi, India</li>
+            <li data-city="Ratlam,IN">Ratlam, India</li>
+            <li data-city="Ratnagiri,IN">Ratnagiri, India</li>
+            <li data-city="Recife,BR">Recife, Brazil</li>
+            <li data-city="Rewa,IN">Rewa, India</li>
+            <li data-city="Rewari,IN">Rewari, India</li>
+            <li data-city="Riyadh,SA">Riyadh, Saudi Arabia</li>
+            <li data-city="Rio de Janeiro,BR">Rio de Janeiro, Brazil</li>
+            <li data-city="Rohtak,IN">Rohtak, India</li>
+            <li data-city="Rome,IT">Rome, Italy</li>
+            <li data-city="Rourkela,IN">Rourkela, India</li>
+            <li data-city="Sagar,IN">Sagar, India</li>
+            <li data-city="Saharanpur,IN">Saharanpur, India</li>
+            <li data-city="Saint Petersburg,RU">Saint Petersburg, Russia</li>
+            <li data-city="Salem,IN">Salem, India</li>
+            <li data-city="Salvador,BR">Salvador, Brazil</li>
+            <li data-city="Sambalpur,IN">Sambalpur, India</li>
+            <li data-city="San Diego,US">San Diego, USA</li>
+            <li data-city="San Francisco,US">San Francisco, USA</li>
+            <li data-city="San Salvador,SV">San Salvador, El Salvador</li>
+            <li data-city="Sana'a,YE">Sana'a, Yemen</li>
+            <li data-city="Sangli,IN">Sangli, India</li>
+            <li data-city="Sangrur,IN">Sangrur, India</li>
+            <li data-city="Santiago,CL">Santiago, Chile</li>
+            <li data-city="Santo Domingo,DO">Santo Domingo, Dominican Republic</li>
+            <li data-city="Sapporo,JP">Sapporo, Japan</li>
+            <li data-city="São Paulo,BR">São Paulo, Brazil</li>
+            <li data-city="Satara,IN">Satara, India</li>
+            <li data-city="Satna,IN">Satna, India</li>
+            <li data-city="Seattle,US">Seattle, USA</li>
+            <li data-city="Sehore,IN">Sehore, India</li>
+            <li data-city="Seoul,KR">Seoul, South Korea</li>
+            <li data-city="Shahjahanpur,IN">Shahjahanpur, India</li>
+            <li data-city="Shanghai,CN">Shanghai, China</li>
+            <li data-city="Shenzhen,CN">Shenzhen, China</li>
+            <li data-city="Shillong,IN">Shillong, India</li>
+            <li data-city="Shimla,IN">Shimla, India</li>
+            <li data-city="Shimoga,IN">Shimoga, India</li>
+            <li data-city="Sikar,IN">Sikar, India</li>
+            <li data-city="Silchar,IN">Silchar, India</li>
+            <li data-city="Siliguri,IN">Siliguri, India</li>
+            <li data-city="Silvassa,IN">Silvassa, India</li>
+            <li data-city="Singapore,SG">Singapore, Singapore</li>
+            <li data-city="Sirsa,IN">Sirsa, India</li>
+            <li data-city="Sitamarhi,IN">Sitamarhi, India</li>
+            <li data-city="Sitapur,IN">Sitapur, India</li>
+            <li data-city="Sivakasi,IN">Sivakasi, India</li>
+            <li data-city="Siwan,IN">Siwan, India</li>
+            <li data-city="Solapur,IN">Solapur, India</li>
+            <li data-city="Sonipat,IN">Sonipat, India</li>
+            <li data-city="Srinagar,IN">Srinagar, India</li>
+            <li data-city="Sultanpur,IN">Sultanpur, India</li>
+            <li data-city="Surabaya,ID">Surabaya, Indonesia</li>
+            <li data-city="Surat,IN">Surat, India</li>
+            <li data-city="Surendranagar,IN">Surendranagar, India</li>
+            <li data-city="Sydney,AU">Sydney, Australia</li>
+            <li data-city="Tarn Taran,IN">Tarn Taran, India</li>
+            <li data-city="Tashkent,UZ">Tashkent, Uzbekistan</li>
+            <li data-city="Tbilisi,GE">Tbilisi, Georgia</li>
+            <li data-city="Tegucigalpa,HN">Tegucigalpa, Honduras</li>
+            <li data-city="Tehran,IR">Tehran, Iran</li>
+            <li data-city="Tel Aviv,IL">Tel Aviv, Israel</li>
+            <li data-city="Tezpur,IN">Tezpur, India</li>
+            <li data-city="Thane,IN">Thane, India</li>
+            <li data-city="Thanjavur,IN">Thanjavur, India</li>
+            <li data-city="Thiruvananthapuram,IN">Thiruvananthapuram, India</li>
+            <li data-city="Thoothukudi,IN">Thoothukudi, India</li>
+            <li data-city="Thrissur,IN">Thrissur, India</li>
+            <li data-city="Tianjin,CN">Tianjin, China</li>
+            <li data-city="Tinsukia,IN">Tinsukia, India</li>
+            <li data-city="Tiruchirappalli,IN">Tiruchirappalli, India</li>
+            <li data-city="Tirunelveli,IN">Tirunelveli, India</li>
+            <li data-city="Tirupati,IN">Tirupati, India</li>
+            <li data-city="Tiruppur,IN">Tiruppur, India</li>
+            <li data-city="Tiruvallur,IN">Tiruvallur, India</li>
+            <li data-city="Tiruvannamalai,IN">Tiruvannamalai, India</li>
+            <li data-city="Tokyo,JP">Tokyo, Japan</li>
+            <li data-city="Tonk,IN">Tonk, India</li>
+            <li data-city="Toronto,CA">Toronto, Canada</li>
+            <li data-city="Tripoli,LY">Tripoli, Libya</li>
+            <li data-city="Tumkur,IN">Tumkur, India</li>
+            <li data-city="Tunis,TN">Tunis, Tunisia</li>
+            <li data-city="Udaipur,IN">Udaipur, India</li>
+            <li data-city="Udgir,IN">Udgir, India</li>
+            <li data-city="Udhampur,IN">Udhampur, India</li>
+            <li data-city="Udupi,IN">Udupi, India</li>
+            <li data-city="Ujjain,IN">Ujjain, India</li>
+            <li data-city="Ulhasnagar,IN">Ulhasnagar, India</li>
+            <li data-city="Unnao,IN">Unnao, India</li>
+            <li data-city="Ürümqi,CN">Ürümqi, China</li>
+            <li data-city="Vadodara,IN">Vadodara, India</li>
+            <li data-city="Valsad,IN">Valsad, India</li>
+            <li data-city="Vancouver,CA">Vancouver, Canada</li>
+            <li data-city="Varanasi,IN">Varanasi, India</li>
+            <li data-city="Vasco da Gama,IN">Vasco da Gama, India</li>
+            <li data-city="Vasai-Virar,IN">Vasai-Virar, India</li>
+            <li data-city="Vellore,IN">Vellore, India</li>
+            <li data-city="Veraval,IN">Veraval, India</li>
+            <li data-city="Victoria,SC">Victoria, Seychelles</li>
+            <li data-city="Vidisha,IN">Vidisha, India</li>
+            <li data-city="Vientiane,LA">Vientiane, Laos</li>
+            <li data-city="Vijayawada,IN">Vijayawada, India</li>
+            <li data-city="Virar,IN">Virar, India</li>
+            <li data-city="Visakhapatnam,IN">Visakhapatnam, India</li>
+            <li data-city="Vizianagaram,IN">Vizianagaram, India</li>
+            <li data-city="Warangal,IN">Warangal, India</li>
+            <li data-city="Wardha,IN">Wardha, India</li>
+            <li data-city="Washington,US">Washington, USA</li>
+            <li data-city="Wellington,NZ">Wellington, New Zealand</li>
+            <li data-city="Windhoek,NA">Windhoek, Namibia</li>
+            <li data-city="Wuhan,CN">Wuhan, China</li>
+            <li data-city="Yamoussoukro,CI">Yamoussoukro, Côte d'Ivoire</li>
+            <li data-city="Yamunanagar,IN">Yamunanagar, India</li>
+            <li data-city="Yangon,MM">Yangon, Myanmar</li>
+            <li data-city="Yavatmal,IN">Yavatmal, India</li>
+            <li data-city="Yerevan,AM">Yerevan, Armenia</li>
+            <li data-city="Yogyakarta,ID">Yogyakarta, Indonesia</li>
+            <li data-city="Yokohama,JP">Yokohama, Japan</li>
+            <li data-city="Zhongshan,CN">Zhongshan, China</li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <h1 class="header">Weather Dashboard</h1>
+            <div class="weather-card">
+                <div class="current-weather">
+                    <div class="weather-emoji">⛅</div>
+                    <div class="city-info" id="cityInfo">Loading...</div>
+                    <div class="temperature">--°C</div>
+                    <div class="description">---</div>
+                    <div class="details">
+                        <div>Humidity: --%</div>
+                        <div>Wind: -- km/h</div>
+                        <div>Pressure: -- hPa</div>
+                        <div>Feels Like: --°C</div>
+                    </div>
+                    <div class="error" id="error">Unable to fetch weather data.</div>
+                </div>
+                <div class="hourly-forecast" id="hourlyForecast">
+                    <!-- 24-hour forecast will be populated here -->
+                </div>
+            </div>
+            <label for="timeShift">Time Shift (0–24):</label>
+            <input type="range" min="0" max="24" value="0" class="time-shift" id="timeShift" step="1">
+            <span id="valueDisplay">0</span>
+        </div>
+    </div>
+
+    <div class="chat-button" id="chatButton">💬</div>
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header">
+            Weather Assistant 🤖
+            <span class="close-chat" id="closeChat">×</span>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-footer">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+            <button class="send-button" id="sendButton">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = '12383a8f5717cbe64b4fd6552b72deb6'; // Replace with your OpenWeatherMap API key
+        const geminiApiKey = 'AIzaSyBIeI4XxW_teY_4vRFd4XKWmJAEOnkLNwY'; // Replace with your Gemini API key
+        const weatherEmoji = {
+            'Clear': '☀️',
+            'Clouds': '☁️',
+            'Rain': '🌧️',
+            'Drizzle': '🌦️',
+            'Thunderstorm': '⛈️',
+            'Snow': '❄️',
+            'Mist': '🌫️',
+            'Fog': '🌫️',
+            'Haze': '🌫️'
+        };
+
+        let currentWeather = { temp: '--', city: 'Unknown', weatherMain: 'Unknown', timezone: 0 };
+        let hourlyData = [];
+        let simulateCloudy = false; // Ensured to be false by default
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const timeShift = document.getElementById('timeShift');
+            if (timeShift) {
+                timeShift.addEventListener('input', (e) => {
+                    const offsetHours = parseInt(e.target.value);
+                    updateHourlyForecast(offsetHours);
+                });
+                updateHourlyForecast(0); // Initial display with 0-hour offset
+            }
+
+            const chatButton = document.getElementById('chatButton');
+            const chatContainer = document.getElementById('chatContainer');
+            const closeChat = document.getElementById('closeChat');
+            const chatBody = document.getElementById('chatBody');
+            const chatInput = document.getElementById('chatInput');
+            const sendButton = document.getElementById('sendButton');
+
+            chatButton.addEventListener('click', () => {
+                chatContainer.classList.toggle('open');
+            });
+
+            closeChat.addEventListener('click', () => {
+                chatContainer.classList.remove('open');
+            });
+
+            sendButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            function showTypingIndicator() {
+                const typingIndicator = document.createElement('div');
+                typingIndicator.className = 'typing-indicator';
+                typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+                chatBody.appendChild(typingIndicator);
+                typingIndicator.style.display = 'block';
+                chatBody.scrollTop = chatBody.scrollHeight;
+                return typingIndicator;
+            }
+
+            function removeTypingIndicator(typingIndicator) {
+                if (typingIndicator) typingIndicator.remove();
+            }
+
+            async function sendMessage() {
+                const messageText = chatInput.value.trim();
+                if (!messageText) return;
+
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user-message';
+                userMessage.textContent = messageText;
+                chatBody.appendChild(userMessage);
+                chatInput.value = '';
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                const typingIndicator = showTypingIndicator();
+
+                try {
+                    const temperatureDetails = `in ${currentWeather.city} at ${currentWeather.temp}°C`;
+                    const prompt = `Based on the current temperature ${temperatureDetails} ${messageText}`;
+                    const response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: prompt }] }]
+                            })
+                        }
+                    );
+                    if (!response.ok) throw new Error('Gemini API request failed');
+                    const data = await response.json();
+                    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I couldn’t process that. Try again!';
+                    const emoji = weatherEmoji[currentWeather.weatherMain] || '🌤️';
+
+                    removeTypingIndicator(typingIndicator);
+                    const aiMessage = document.createElement('div');
+                    aiMessage.className = 'message ai-message';
+                    aiMessage.innerHTML = `${aiResponse} <span>${emoji}</span>`;
+                    chatBody.appendChild(aiMessage);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                } catch (error) {
+                    removeTypingIndicator(typingIndicator);
+                    const aiMessage = document.createElement('div');
+                    aiMessage.className = 'message ai-message';
+                    aiMessage.innerHTML = 'Error fetching response. Please check your Gemini API key or try again later. 🌥️';
+                    chatBody.appendChild(aiMessage);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                    console.error('Chatbot error:', error);
+                }
+            }
+
+            function getWeatherByLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude } = position.coords;
+                            fetchWeatherByCoords(latitude, longitude);
+                        },
+                        (error) => {
+                            console.error('Geolocation error:', error);
+                            showErrorMessage('Unable to get your location. Using fallback: Mumbai,IN');
+                            fetchWeatherByCity('Mumbai,IN');
+                        }
+                    );
+                } else {
+                    showErrorMessage('Geolocation is not supported. Using fallback: Mumbai,IN');
+                    fetchWeatherByCity('Mumbai,IN');
+                }
+            }
+
+            function fetchWeatherByCoords(lat, lon) {
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.main || !data.weather) throw new Error('Invalid weather data response');
+                        updateWeatherData(data, data.name, data.timezone);
+                        fetchHourlyForecast(lat, lon);
+                    })
+                    .catch(error => {
+                        console.error('Weather fetch error:', error);
+                        showErrorMessage('Failed to fetch weather data. Using fallback: Mumbai,IN');
+                        fetchWeatherByCity('Mumbai,IN');
+                    });
+            }
+
+            const input = document.getElementById('cityInput');
+            input.addEventListener('input', function () {
+                const query = input.value;
+
+                if (query.length < 3) {
+                    cityList.innerHTML = '';
+                    return;
+                }
+
+                fetch(`https://wft-geo-db.p.rapidapi.com/v1/geo/cities?namePrefix=${query}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-RapidAPI-Key': '72d07b9d1bmsha7c817ca9b9e4cep164a69jsn3d836524895c', // Replace with your API key
+                        'X-RapidAPI-Host': 'wft-geo-db.p.rapidapi.com'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        cityList.innerHTML = '';
+                        data.data.forEach(city => {
+                            const li = document.createElement('li');
+                            li.textContent = `${city.city}, ${city.country}`;
+                            li.setAttribute('data-city', `${city.city},${city.countryCode}`);
+                            cityList.appendChild(li);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+            function fetchWeatherByCity(cityValue) {
+                const [city, country] = cityValue.split(',');
+                const url = `https://api.openweathermap.org/data/2.5/weather?q=${city},${country}&units=metric&appid=${apiKey}`;
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.main || !data.weather) throw new Error('Invalid weather data response');
+                        updateWeatherData(data, city, data.timezone);
+                        fetchHourlyForecast(data.coord.lat, data.coord.lon);
+                    })
+                    .catch(error => {
+                        console.error('City weather fetch error:', error);
+                        showErrorMessage(`Failed to fetch weather for ${city}. Using fallback: Mumbai,IN`);
+                        fetchWeatherByCity('Mumbai,IN');
+                    });
+            }
+
+            async function fetchHourlyForecast(lat, lon) {
+                const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    if (!data.list) throw new Error('Invalid hourly forecast data');
+                    hourlyData = data.list.map(item => ({
+                        ...item,
+                        weather: [{ main: simulateCloudy ? 'Clouds' : item.weather[0].main }]
+                    }));
+                    updateHourlyForecast(0);
+                } catch (error) {
+                    console.error('Hourly forecast error:', error);
+                    showErrorMessage('Failed to fetch hourly forecast data.');
+                }
+            }
+
+            const slider = document.getElementById('timeShift');
+            const display = document.getElementById('valueDisplay');
+            slider.addEventListener('input', function() {
+                display.textContent = this.value;
+            });
+
+            function updateWeatherData(data, cityName, timezoneOffset) {
+                currentWeather = {
+                    temp: Math.round(data.main.temp),
+                    city: cityName,
+                    weatherMain: simulateCloudy ? 'Clouds' : data.weather[0].main,
+                    timezone: timezoneOffset / 3600 // Convert seconds to hours
+                };
+                const now = new Date('2025-07-31T11:43:00+05:30'); // 11:43 AM IST
+                const localTime = new Date(now.getTime() + currentWeather.timezone * 60 * 60 * 1000 - 5.5 * 60 * 60 * 1000); // Adjust to local time
+                const timeStr = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const dateStr = localTime.toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+                const tzStr = `UTC${currentWeather.timezone >= 0 ? '+' : ''}${currentWeather.timezone}`;
+                document.getElementById('cityInfo').textContent = `${cityName} - ${timeStr}, ${dateStr} (${tzStr})`;
+                const emoji = weatherEmoji[currentWeather.weatherMain] || '⛅';
+                document.querySelector('.weather-emoji').textContent = emoji;
+                document.querySelector('.temperature').textContent = `${Math.round(data.main.temp)}°C`;
+                document.querySelector('.description').textContent = simulateCloudy ? 'Overcast' : data.weather[0].description;
+                document.querySelector('.details').innerHTML = `
+                    <div>Humidity: ${data.main.humidity}%</div>
+                    <div>Wind: ${(data.wind?.speed * 3.6 || 0).toFixed(1)} km/h</div>
+                    <div>Pressure: ${data.main.pressure} hPa</div>
+                    <div>Feels Like: ${Math.round(data.main.feels_like)}°C</div>
+                `;
+                document.getElementById('error').style.display = 'none';
+                updateCityList();
+            }
+
+            function updateHourlyForecast(offsetHours) {
+                const hourlyForecast = document.getElementById('hourlyForecast');
+                if (!hourlyForecast || !hourlyData.length) return;
+                hourlyForecast.innerHTML = '';
+                const now = new Date('2025-07-31T11:43:00+05:30'); // 11:43 AM IST
+                const startTime = new Date(now.getTime() + offsetHours * 60 * 60 * 1000);
+                const next24Hours = hourlyData.filter(item => {
+                    const itemTime = new Date(item.dt * 1000 + currentWeather.timezone * 60 * 60 * 1000);
+                    return itemTime >= startTime && itemTime < new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
+                }).slice(0, 24); // 24 hours, 1-hour intervals
+
+                next24Hours.forEach((hour, index) => {
+                    const time = new Date(hour.dt * 1000 + currentWeather.timezone * 60 * 60 * 1000);
+                    const hourStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const temp = Math.round(hour.main.temp);
+                    const emoji = weatherEmoji[hour.weather[0].main] || '⛅';
+                    const item = document.createElement('div');
+                    item.className = 'hourly-item';
+                    item.innerHTML = `
+                        <div class="hour">${hourStr}</div>
+                        <div class="hour-emoji">${emoji}</div>
+                        <div class="hour-temp">${temp}°C</div>
+                    `;
+                    hourlyForecast.appendChild(item);
+                });
+            }
+
+            function showErrorMessage(message) {
+                document.getElementById('error').textContent = message;
+                document.getElementById('error').style.display = 'block';
+            }
+
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const cityList = document.getElementById('cityList');
+            const cityInput = document.getElementById('cityInput');
+
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+
+            cityInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const cities = cityList.getElementsByTagName('li');
+                Array.from(cities).forEach(city => {
+                    const text = city.textContent.toLowerCase();
+                    city.style.display = text.includes(searchTerm) ? 'block' : 'none';
+                });
+            });
+
+            cityList.addEventListener('click', (e) => {
+                if (e.target.tagName === 'LI' && e.target.style.display !== 'none') {
+                    const cityValue = e.target.getAttribute('data-city');
+                    fetchWeatherByCity(cityValue);
+                    sidebar.classList.remove('open');
+                    cityInput.value = '';
+                    Array.from(cityList.getElementsByTagName('li')).forEach(li => li.style.display = 'block');
+                }
+            });
+
+            function updateCityList() {
+                const cities = cityList.getElementsByTagName('li');
+                Array.from(cities).forEach(city => {
+                    const [cityName, country] = city.getAttribute('data-city').split(',');
+                    const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName},${country}&units=metric&appid=${apiKey}`;
+                    fetch(url)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.json();
+                        })
+                        .then(data => {
+                            const timezoneOffset = data.timezone / 3600;
+                            const now = new Date('2025-07-31T11:43:00+05:30');
+                            const localTime = new Date(now.getTime() + (timezoneOffset - 5.5) * 60 * 60 * 1000);
+                            const timeStr = localTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                            const dateStr = localTime.toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+                            const tzStr = `UTC${timezoneOffset >= 0 ? '+' : ''}${timezoneOffset}`;
+                            city.textContent = `${cityName}, ${country} - ${timeStr}, ${dateStr} (${tzStr})`;
+                        })
+                        .catch(error => {
+                            console.error(`Error fetching timezone for ${cityName}:`, error);
+                            city.textContent = `${cityName}, ${country} - Time unavailable`;
+                        });
+                });
+            }
+
+            // Initial load with current location
+            window.addEventListener('load', () => getWeatherByLocation());
+
+            // Function to toggle cloudy simulation (for testing, use only if needed)
+            window.toggleCloudySimulation = function() {
+                simulateCloudy = !simulateCloudy;
+                fetchWeatherByCity(currentWeather.city); // Refresh with current city
+                console.log('Cloudy simulation:', simulateCloudy);
+            };
+        });
+    </script>
+</body>
+</html>

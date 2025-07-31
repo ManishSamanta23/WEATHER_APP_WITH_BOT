@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App with Chatbot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Poppins', sans-serif;
+      transition: background 0.5s ease;
+      background: linear-gradient(to bottom, #4f46e5, #60a5fa);
+    }
+    .card {
+      background: linear-gradient(135deg, #fefcbf, #fef9c3);
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      padding: 2rem;
+      width: 100%;
+      max-width: 800px;
+      margin: 1rem;
+      animation: fadeIn 0.8s ease-in-out;
+      position: relative;
+    }
+    .forecast-card, .hourly-card {
+      background: linear-gradient(135deg, #5eead4, #22d3ee);
+      border-radius: 1rem;
+      padding: 1rem;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeInUp 0.5s ease-in-out;
+    }
+    .forecast-card:hover, .hourly-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .weather-icon {
+      width: 60px;
+      height: 60px;
+      animation: pulse 2s infinite;
+    }
+    .error {
+      color: #dc2626;
+      font-size: 1rem;
+      text-align: center;
+      animation: shake 0.3s ease-in-out;
+    }
+    .loading {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #10b981;
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      animation: spin 1s linear infinite, colorSpin 4s linear infinite;
+      margin: 1rem auto;
+    }
+    .collapsible {
+      cursor: pointer;
+      color: #1d4ed8;
+      text-decoration: underline;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+    .collapsible:hover {
+      color: #3b82f6;
+    }
+    .hourly-toggle {
+      background: linear-gradient(135deg, #f472b6, #fbbf24);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      transition: transform 0.3s ease;
+    }
+    .hourly-toggle:hover {
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none;
+    }
+    .chat-button {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, #f43f5e, #fb7185);
+      color: white;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .chat-button:hover {
+      transform: scale(1.2) rotate(10deg);
+      animation: bounce 0.5s ease-in-out;
+    }
+    .chat-modal {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 450px;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      z-index: 1000;
+      animation: slideInRightModal 0.5s ease-in-out;
+    }
+    .chat-container {
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23add8e6"/><path d="M0 50 Q 25 75, 50 50 Q 75 25, 100 50" fill="none" stroke="%23b0e0e6" stroke-width="2"/><circle cx="30" cy="30" r="10" fill="%23fff"/><circle cx="70" cy="70" r="10" fill="%23fff"/><path d="M20 40 L 40 60" stroke="%2380bfff" stroke-width="2"/><path d="M60 40 L 80 60" stroke="%2380bfff" stroke-width="2"/></svg>') repeat;
+      border-radius: 1.5rem 0 0 1.5rem;
+      width: 100%;
+      max-width: 450px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: -8px 0 24px rgba(0, 0, 0, 0.3);
+    }
+    .chat-header {
+      background: linear-gradient(135deg, #1e90ff, #87ceeb);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-header button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .chat-body {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.8);
+    }
+    .chat-message {
+      max-width: 75%;
+      padding: 0.75rem 1.25rem;
+      margin: 0.75rem;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .user-message {
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: white;
+      margin-left: auto;
+      animation: slideInRight 0.4s ease-in-out;
+    }
+    .ai-message {
+      background: linear-gradient(135deg, #10b981, #34d399);
+      color: white;
+      margin-right: auto;
+      animation: slideInLeft 0.4s ease-in-out;
+    }
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      margin: 0.75rem;
+      margin-right: auto;
+    }
+    .typing-indicator span {
+      width: 10px;
+      height: 10px;
+      background: #f43f5e;
+      border-radius: 50%;
+      margin: 0 3px;
+      animation: bounce 0.6s infinite alternate;
+    }
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    .chat-footer {
+      padding: 1.5rem;
+      border-top: 1px solid #d1d5db;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .chat-input {
+      flex-grow: 1;
+      padding: 0.75rem;
+      border: 2px solid #d1d5db;
+      border-radius: 0.75rem;
+      outline: none;
+      transition: border-color 0.3s ease;
+      background: rgba(255, 255, 255, 0.7);
+    }
+    .chat-input:focus {
+      border: 2px solid #4f46e5;
+    }
+    .send-button {
+      background: linear-gradient(135deg, #f43f5e, #fb7185);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .send-button:hover {
+      transform: scale(1.05);
+    }
+    .chat-input-wrapper {
+      position: relative;
+      flex-grow: 1;
+    }
+    .chat-input-wrapper::before {
+      content: '☁️';
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+    }
+    .chat-input {
+      padding-left: 2rem;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes colorSpin {
+      0% { border-top-color: #10b981; }
+      33% { border-top-color: #f43f5e; }
+      66% { border-top-color: #4f46e5; }
+      100% { border-top-color: #10b981; }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInRightModal {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-7px); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    @media (max-width: 640px) {
+      .card {
+        margin: 0.75rem;
+        padding: 1.5rem;
+      }
+      .weather-icon {
+        width: 50px;
+        height: 50px;
+      }
+      .forecast-card, .hourly-card {
+        padding: 0.75rem;
+      }
+      .hourly-container {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        scroll-snap-type: x mandatory;
+      }
+      .hourly-card {
+        flex: 0 0 150px;
+        scroll-snap-align: start;
+      }
+      .chat-modal {
+        max-width: 100%;
+        justify-content: center;
+      }
+      .chat-container {
+        max-width: 95%;
+        border-radius: 1.5rem;
+      }
+    }
+    @media (min-width: 1024px) {
+      .forecast-container {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+      }
+      .hourly-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="text-3xl font-bold text-center text-indigo-900 mb-4">Weather Hub</h1>
+    <div id="datetime" class="text-center text-lg text-indigo-700 mb-4"></div>
+    <div class="mb-4">
+      <input id="cityInput" type="text" placeholder="Search city (e.g., London)" class="w-full p-3 rounded-lg border border-indigo-300 focus:outline-none focus:border-indigo-500 transition-all duration-300">
+      <button id="searchBtn" class="mt-2 w-full bg-gradient-to-r from-indigo-600 to-teal-500 text-white p-3 rounded-lg hover:from-indigo-700 hover:to-teal-600 transition-all duration-300">Search City</button>
+    </div>
+    <div class="flex justify-center mb-4">
+      <button id="unitToggle" class="bg-gradient-to-r from-pink-500 to-yellow-500 text-white px-6 py-2 rounded-lg hover:from-pink-600 hover:to-yellow-600 transition-all duration-300">Switch to °F</button>
+    </div>
+    <div id="weather" class="text-center">
+      <div class="loading"></div>
+      <p class="text-lg text-indigo-600">Fetching weather data...</p>
+    </div>
+    <div class="mt-6 flex justify-center">
+      <button id="hourlyToggle" class="hourly-toggle">Show Hourly Forecast</button>
+    </div>
+    <div id="hourly" class="hourly-container hidden mt-4"></div>
+    <div id="forecast" class="forecast-container mt-6"></div>
+  </div>
+
+  <div id="chatButton" class="chat-button">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5v-4h-.01M19 16h-4v-4h.01M5 20h14v-8H5v8z" />
+    </svg>
+  </div>
+
+  <div id="chatModal" class="chat-modal hidden">
+    <div class="chat-container">
+      <div class="chat-header">
+        <h2>Weather Assistant</h2>
+        <button onclick="this.parentElement.parentElement.parentElement.classList.add('hidden')">×</button>
+      </div>
+      <div id="chatBody" class="chat-body">
+        <div class="chat-message ai-message">Hello! I'm your colorful weather assistant. How can I help you today?</div>
+      </div>
+      <div class="chat-footer">
+        <div class="chat-input-wrapper">
+          <input id="chatInput" type="text" placeholder="Type a message..." class="chat-input">
+        </div>
+        <button id="sendMessage" class="send-button">🌞 Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const openWeatherApiKey = '12383a8f5717cbe64b4fd6552b72deb6'; // Replace with your OpenWeatherMap API key
+    const geminiApiKey = 'AIzaSyBIeI4XxW_teY_4vRFd4XKWmJAEOnkLNwY'; // Replace with your Gemini API key
+    const weatherDiv = document.getElementById('weather');
+    const forecastDiv = document.getElementById('forecast');
+    const hourlyDiv = document.getElementById('hourly');
+    const hourlyToggle = document.getElementById('hourlyToggle');
+    const cityInput = document.getElementById('cityInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const unitToggle = document.getElementById('unitToggle');
+    const datetimeDiv = document.getElementById('datetime');
+    const chatButton = document.getElementById('chatButton');
+    const chatModal = document.getElementById('chatModal');
+    const chatInput = document.getElementById('chatInput');
+    const sendMessage = document.getElementById('sendMessage');
+    const chatBody = document.getElementById('chatBody');
+    let unit = localStorage.getItem('unit') || 'metric'; // Default to Celsius
+    let currentWeather = null; // Store current weather data
+
+    // Weather icon mapping using OpenWeatherMap icons
+    const getWeatherIcon = (condition, iconCode) => {
+      return `http://openweathermap.org/img/wn/${iconCode}@2x.png`;
+    };
+
+    // Dynamic background based on weather
+    const weatherBackgrounds = {
+      'Clear': 'from-yellow-400 to-blue-400',
+      'Clouds': 'from-gray-500 to-indigo-300',
+      'Rain': 'from-blue-600 to-teal-500',
+      'Drizzle': 'from-blue-500 to-teal-400',
+      'Thunderstorm': 'from-gray-800 to-indigo-900',
+      'Snow': 'from-blue-200 to-white',
+      'Mist': 'from-gray-400 to-gray-200',
+      'Fog': 'from-gray-400 to-gray-200',
+      'Haze': 'from-gray-400 to-gray-200'
+    };
+
+    // Update date and time every second
+    function updateDateTime() {
+      const now = new Date();
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+      };
+      datetimeDiv.textContent = now.toLocaleString('en-US', options);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    // Function to display weather data
+    function displayWeather(data, forecastData) {
+      const { name, main, weather, wind, sys } = data;
+      currentWeather = { name, temp: Math.round(main.temp), description: weather[0].description, unit: unit === 'metric' ? '°C' : '°F', icon: weather[0].icon };
+      const description = weather[0].main;
+      const iconUrl = getWeatherIcon(description, weather[0].icon);
+      const sunrise = new Date(sys.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sunset = new Date(sys.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const unitSymbol = unit === 'metric' ? '°C' : '°F';
+
+      // Update background
+      document.body.className = `bg-gradient-to-b ${weatherBackgrounds[description] || 'from-indigo-600 to-teal-400'}`;
+
+      weatherDiv.innerHTML = `
+        <img src="${iconUrl}" alt="${description}" class="weather-icon mx-auto">
+        <h2 class="text-2xl font-semibold text-indigo-900">${name}</h2>
+        <p class="text-4xl font-bold text-indigo-800">${currentWeather.temp}${unitSymbol}</p>
+        <p class="text-lg text-indigo-600 capitalize">${weather[0].description}</p>
+        <p class="text-sm text-indigo-500 mt-2">Humidity: ${main.humidity}%</p>
+        <p class="text-sm text-indigo-500">Wind: ${wind.speed} ${unit === 'metric' ? 'm/s' : 'mph'}</p>
+        <p class="text-sm text-indigo-500">Sunrise: ${sunrise}</p>
+        <p class="text-sm text-indigo-500">Sunset: ${sunset}</p>
+      `;
+
+      // Display 5-day forecast
+      if (forecastData && forecastData.daily) {
+        forecastDiv.innerHTML = forecastData.daily.slice(1, 6).map(day => {
+          const date = new Date(day.dt * 1000).toLocaleDateString([], { weekday: 'short' });
+          const tempHigh = Math.round(day.temp.max);
+          const tempLow = Math.round(day.temp.min);
+          const dayIcon = getWeatherIcon(day.weather[0].main, day.weather[0].icon);
+          return `
+            <div class="forecast-card">
+              <p class="text-sm font-semibold text-indigo-700">${date}</p>
+              <img src="${dayIcon}" alt="${day.weather[0].main}" class="weather-icon mx-auto">
+              <p class="text-sm text-indigo-600">High: ${tempHigh}${unitSymbol}</p>
+              <p class="text-sm text-indigo-600">Low: ${tempLow}${unitSymbol}</p>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Display hourly forecast (next 24 hours)
+      if (forecastData && forecastData.hourly) {
+        hourlyDiv.innerHTML = forecastData.hourly.slice(0, 24).map(hour => {
+          const time = new Date(hour.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const temp = Math.round(hour.temp);
+          const hourIcon = getWeatherIcon(hour.weather[0].main, hour.weather[0].icon);
+          return `
+            <div class="hourly-card">
+              <p class="text-sm font-semibold text-indigo-700">${time}</p>
+              <img src="${hourIcon}" alt="${hour.weather[0].main}" class="weather-icon mx-auto">
+              <p class="text-sm text-teal-600">${temp}${unitSymbol}</p>
+              <p class="text-xs text-teal-500 capitalize">${hour.weather[0].description}</p>
+              <p class="text-xs text-teal-500">Humidity: ${hour.humidity}%</p>
+              <p class="text-xs text-teal-500">Wind: ${hour.wind_speed} ${unit === 'metric' ? 'm/s' : 'mph'}</p>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Function to display error
+    function displayError(message) {
+      weatherDiv.innerHTML = `<p class="error">${message} <button id="retryBtn" class="text-indigo-600 underline hover:text-indigo-800">Retry</button></p>`;
+      forecastDiv.innerHTML = '';
+      hourlyDiv.innerHTML = '';
+      document.getElementById('retryBtn')?.addEventListener('click', getUserLocation);
+    }
+
+    // Function to fetch weather by coordinates with fallback
+    function fetchWeather(lat, lon) {
+      const cacheKey = `weather_${lat}_${lon}_${unit}`;
+      const cachedData = localStorage.getItem(cacheKey);
+      if (cachedData) {
+        const { current, forecast, timestamp } = JSON.parse(cachedData);
+        if (Date.now() - timestamp < 10 * 60 * 1000) { // Cache valid for 10 minutes
+          console.log('Using cached weather data:', { lat, lon, unit });
+          displayWeather(current, forecast);
+          return;
+        }
+      }
+
+      const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&units=${unit}&exclude=minutely,alerts&appid=${openWeatherApiKey}`;
+      console.log('Fetching weather from:', url);
+      weatherDiv.innerHTML = `<div class="loading"></div><p class="text-lg text-indigo-600">Fetching weather data...</p>`;
+      fetch(url)
+        .then(response => {
+          console.log('OpenWeather API Response Status:', response.status);
+          if (!response.ok) {
+            return response.json().then(err => {
+              if (response.status === 401) {
+                throw new Error('Invalid OpenWeather API key. Please check your API key, ensure you are subscribed to the "One Call by Call" plan, or wait for activation (up to 2 hours). See https://openweathermap.org/faq#error401 for details.');
+              } else if (response.status === 429) {
+                throw new Error('OpenWeather API rate limit exceeded. Please wait a few minutes and try again.');
+              }
+              throw new Error(`OpenWeather API Error: ${err.message || 'Unknown error'} (Code: ${response.status})`);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('OpenWeather One Call API Response:', data);
+          fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${unit}&appid=${openWeatherApiKey}`)
+            .then(res => res.json())
+            .then(current => {
+              if (current.cod === 401) {
+                throw new Error('Invalid OpenWeather API key for current weather. Please check your API key or wait for activation.');
+              }
+              console.log('OpenWeather Current Weather API Response:', current);
+              const cacheData = { current, forecast: data, timestamp: Date.now() };
+              localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+              displayWeather(current, data);
+            })
+            .catch(error => {
+              console.error('Current Weather Fetch Error:', error);
+              // Fallback to basic weather endpoint
+              fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${unit}&appid=${openWeatherApiKey}`)
+                .then(res => res.json())
+                .then(fallbackData => {
+                  if (fallbackData.cod === 401) {
+                    throw new Error('Invalid OpenWeather API key for fallback endpoint. Please check your API key or wait for activation.');
+                  } else if (fallbackData.cod === 429) {
+                    throw new Error('OpenWeather API rate limit exceeded for fallback endpoint. Please wait a few minutes and try again.');
+                  }
+                  console.log('Fallback API Response:', fallbackData);
+                  const cacheData = { current: fallbackData, timestamp: Date.now() };
+                  localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                  displayWeather(fallbackData, null); // No forecast data
+                })
+                .catch(fallbackError => {
+                  console.error('Fallback Fetch Error:', fallbackError);
+                  displayError(`Failed to fetch weather: ${fallbackError.message}`);
+                });
+            });
+        })
+        .catch(error => {
+          console.error('One Call Fetch Error:', error);
+          // Attempt fallback to basic weather endpoint
+          fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${unit}&appid=${openWeatherApiKey}`)
+            .then(res => res.json())
+            .then(fallbackData => {
+              if (fallbackData.cod === 401) {
+                throw new Error('Invalid OpenWeather API key for fallback endpoint. Please check your API key or wait for activation.');
+              } else if (fallbackData.cod === 429) {
+                throw new Error('OpenWeather API rate limit exceeded for fallback endpoint. Please wait a few minutes and try again.');
+              }
+              console.log('Fallback API Response:', fallbackData);
+              const cacheData = { current: fallbackData, timestamp: Date.now() };
+              localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+              displayWeather(fallbackData, null); // No forecast data
+            })
+            .catch(fallbackError => {
+              console.error('Fallback Fetch Error:', fallbackError);
+              displayError(`Failed to fetch weather: ${fallbackError.message}`);
+            });
+        });
+    }
+
+    // Function to fetch weather by city (optional)
+    function fetchWeatherByCity(city) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${openWeatherApiKey}`;
+      console.log('Fetching weather for city:', url);
+      weatherDiv.innerHTML = `<div class="loading"></div><p class="text-lg text-indigo-600">Fetching weather data...</p>`;
+      fetch(url)
+        .then(response => {
+          console.log('OpenWeather API Response Status:', response.status);
+          if (!response.ok) {
+            return response.json().then(err => {
+              if (response.status === 401) {
+                throw new Error('Invalid OpenWeather API key. Please check your API key, ensure you are subscribed to the "One Call by Call" plan, or wait for activation (up to 2 hours). See https://openweathermap.org/faq#error401 for details.');
+              } else if (response.status === 429) {
+                throw new Error('OpenWeather API rate limit exceeded. Please wait a few minutes and try again.');
+              }
+              throw new Error(`OpenWeather API Error: ${err.message || 'Unknown error'} (Code: ${response.status})`);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('OpenWeather City API Response:', data);
+          fetchWeather(data.coord.lat, data.coord.lon);
+        })
+        .catch(error => {
+          console.error('City Fetch Error:', error);
+          displayError(`Failed to fetch weather for ${city}: ${error.message}`);
+        });
+    }
+
+    // Function to show typing indicator
+    function showTypingIndicator() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'typing-indicator';
+      typingDiv.innerHTML = '<span></span><span></span><span></span>';
+      chatBody.appendChild(typingDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+      return typingDiv;
+    }
+
+    // Function to remove typing indicator
+    function removeTypingIndicator(typingDiv) {
+      if (typingDiv && typingDiv.parentNode) {
+        typingDiv.parentNode.removeChild(typingDiv);
+      }
+    }
+
+    // Function to add chat message
+    function addMessage(text, isUser) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `chat-message ${isUser ? 'user-message' : 'ai-message'}`;
+      messageDiv.textContent = text;
+      chatBody.appendChild(messageDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    // Function to fetch Gemini API response
+    async function fetchGeminiResponse(message) {
+      const tempDetails = currentWeather
+        ? `Current temperature in ${currentWeather.name} is ${currentWeather.temp}${currentWeather.unit}, ${currentWeather.description}`
+        : 'No weather data available';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+      const typingDiv = showTypingIndicator();
+      try {
+        console.log('Fetching Gemini API from:', url);
+        console.log('Gemini API Request Payload:', { contents: [{ parts: [{ text: `Based on the current temperature ${tempDetails} ${message}` }] }] });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `Based on the current temperature ${tempDetails} ${message}` }]
+            }]
+          })
+        });
+        console.log('Gemini API Response Status:', response.status);
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(`Gemini API Error: ${err.error?.message || 'Unknown error'} (Code: ${response.status})`);
+        }
+        const data = await response.json();
+        console.log('Gemini API Response:', data);
+        const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I couldn’t process that.';
+        setTimeout(() => {
+          removeTypingIndicator(typingDiv);
+          addMessage(aiResponse, false);
+        }, 1000); // Minimum 1s delay for typing indicator
+      } catch (error) {
+        console.error('Gemini Fetch Error:', error);
+        setTimeout(() => {
+          removeTypingIndicator(typingDiv);
+          addMessage('Error: Failed to get AI response. Please try again later.', false);
+        }, 1000);
+      }
+    }
+
+    // Debounce function for city search
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Get user's location
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            console.log('User Location:', { latitude, longitude });
+            fetchWeather(latitude, longitude);
+          },
+          (error) => {
+            console.error('Geolocation Error:', error);
+            let message = 'Unable to access location. Please enable location access in your browser settings.';
+            if (error.code === error.PERMISSION_DENIED) {
+              message = 'Location access denied. Please allow location access to view weather data.';
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+              message = 'Location unavailable. Please check your device’s location services.';
+            }
+            displayError(message);
+          },
+          { timeout: 10000, maximumAge: 60000 } // 10s timeout, 1min cache
+        );
+      } else {
+        displayError('Geolocation is not supported by this browser.');
+      }
+    }
+
+    // Unit toggle
+    unitToggle.addEventListener('click', () => {
+      unit = unit === 'metric' ? 'imperial' : 'metric';
+      localStorage.setItem('unit', unit);
+      unitToggle.textContent = `Switch to ${unit === 'metric' ? '°F' : '°C'}`;
+      getUserLocation();
+    });
+
+    // City search (optional)
+    searchBtn.addEventListener('click', () => {
+      const city = cityInput.value.trim();
+      if (city) {
+        fetchWeatherByCity(city);
+      }
+    });
+
+    cityInput.addEventListener('input', debounce(() => {
+      const city = cityInput.value.trim();
+      if (city) {
+        fetchWeatherByCity(city);
+      }
+    }, 500));
+
+    // Hourly forecast toggle
+    hourlyToggle.addEventListener('click', () => {
+      hourlyDiv.classList.toggle('hidden');
+      hourlyToggle.textContent = hourlyDiv.classList.contains('hidden') ? 'Show Hourly Forecast' : 'Hide Hourly Forecast';
+    });
+
+    // Chatbot functionality
+    chatButton.addEventListener('click', () => {
+      chatModal.classList.toggle('hidden');
+    });
+
+    chatModal.addEventListener('click', (e) => {
+      if (e.target === chatModal) {
+        chatModal.classList.add('hidden');
+      }
+    });
+
+    sendMessage.addEventListener('click', () => {
+      const message = chatInput.value.trim();
+      if (message) {
+        addMessage(message, true);
+        chatInput.value = '';
+        fetchGeminiResponse(message);
+      }
+    });
+
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage.click();
+      }
+    });
+
+    // Initialize unit button text
+    unitToggle.textContent = `Switch to ${unit === 'metric' ? '°F' : '°C'}`;
+
+    // Initial load
+    getUserLocation();
+  </script>
+</body>
+</html>
