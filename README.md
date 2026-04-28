@@ -1,7 +1,12 @@
 # 🌍 AI Weather App - MERN Stack
 
 A full-stack weather application built with the MERN Stack (MongoDB, Express, React, Node.js) with Tailwind CSS styling.
-
+<p align="center">
+	<a href="#"><img alt="Live Demo" src="https://img.shields.io/badge/Live%20Demo-Vercel-0f172a?style=for-the-badge&logo=vercel"/></a>
+	<a href="#"><img alt="Frontend" src="https://img.shields.io/badge/Frontend-React%2018-61DAFB?style=for-the-badge&logo=react&logoColor=white"/></a>
+	<a href="#"><img alt="Backend" src="https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white"/></a>
+	<a href="#"><img alt="Database" src="https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/></a>
+</p>
 ## 🚀 Tech Stack
 
 - **Frontend**: React 18 + Vite + Tailwind CSS
@@ -112,39 +117,6 @@ AI Weather APP/
 - `GET /api/cities` - Get all cities
 - `POST /api/cities` - Add a new city
 - `POST /api/cities/seed` - Seed cities data
-
-## 🎨 Features
-
-- 🔍 Search weather by city name
-- 📍 Get weather by geolocation
-- 📊 5-day weather forecast
-- 🏙️ Popular cities list
-- 📱 Responsive design with Tailwind CSS
-- 🎯 Modern UI with backdrop blur effects
-- ⚡ Fast performance with Vite
-
-## 🛠️ Development
-
-### Backend Development
-```bash
-cd backend
-npm run dev  # Runs with nodemon
-```
-
-### Frontend Development
-```bash
-cd frontend
-npm run dev  # Runs with Vite dev server
-```
-
-### Building for Production
-```bash
-# Frontend
-cd frontend
-npm run build
-
-# Backend runs as-is
-```
 
 ## 🔑 Getting an OpenWeatherMap API Key
 
