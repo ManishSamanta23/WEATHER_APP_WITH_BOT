@@ -1,21 +1,7 @@
-import Weather from '../models/Weather.js';
-
 export const getWeatherStats = async (req, res) => {
   try {
-    const stats = await Weather.aggregate([
-      {
-        $group: {
-          _id: '$city',
-          avgTemp: { $avg: '$temperature' },
-          maxTemp: { $max: '$temperature' },
-          minTemp: { $min: '$temperature' },
-          count: { $sum: 1 }
-        }
-      },
-      { $limit: 10 }
-    ]);
-
-    res.json(stats);
+    // No database available - return empty stats
+    res.json([]);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching statistics', error: error.message });
   }
@@ -23,13 +9,10 @@ export const getWeatherStats = async (req, res) => {
 
 export const clearOldData = async (req, res) => {
   try {
-    const result = await Weather.deleteMany({
-      timestamp: { $lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-    });
-
+    // No database to clear - return success
     res.json({ 
-      message: 'Old data cleared', 
-      deletedCount: result.deletedCount 
+      message: 'No database - nothing to clear', 
+      deletedCount: 0 
     });
   } catch (error) {
     res.status(500).json({ message: 'Error clearing data', error: error.message });

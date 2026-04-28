@@ -1,9 +1,24 @@
+import '../config/env.js';
 import axios from 'axios';
-import Weather from '../models/Weather.js';
 
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
 const OPENWEATHER_GEO_BASE_URL = 'https://api.openweathermap.org/geo/1.0';
+
+const formatLocationLabel = (place) => {
+  if (!place) return null;
+
+  const parts = [place.name, place.state, place.country].filter(Boolean);
+  return parts.join(', ');
+};
+
+// Verify API key is loaded
+if (!OPENWEATHER_API_KEY) {
+  console.warn('⚠️  WARNING: OPENWEATHER_API_KEY is not set in environment variables');
+  console.warn('⚠️  Weather data will use mock/fallback responses');
+} else {
+  console.log('✅ OpenWeather API Key loaded successfully');
+}
 
 // Get weather by city name
 export const getWeatherByCity = async (req, res) => {
@@ -165,16 +180,20 @@ export const getWeatherByCity = async (req, res) => {
         longitude: response.data.coord.lon
       };
 
-      // Save to database (non-blocking, fire and forget)
-      Weather.create(weatherData).catch(err => {
-        console.log('Database save skipped:', err.message);
-      });
-
       res.json(weatherData);
     } catch (apiError) {
+      // Log the actual error for debugging
+      console.error(`API Error for city '${cityName}':`, apiError.message, apiError.response?.status, apiError.response?.data);
+
+      if (apiError.response?.status === 401) {
+        return res.status(502).json({
+          message: 'OpenWeather API key is invalid or not authorized. Update OPENWEATHER_API_KEY in backend/.env.'
+        });
+      }
+
+      console.log(`Falling back to mock data for: ${cityName}`);
       // Fallback to mock data
       const mockData = mockWeatherData[cityName.toLowerCase()] || buildGenericMockWeather(cityName);
-      console.log(`Using mock data for: ${cityName}`);
       res.json(mockData);
     }
   } catch (error) {
@@ -230,7 +249,30 @@ export const getWeatherByCoordinates = async (req, res) => {
       }
     });
 
-    // Use closest city if within reasonable distance (roughly 200km), otherwise try API
+    let resolvedLocation = null;
+
+    try {
+      const reverseGeocode = await axios.get(
+        `${OPENWEATHER_GEO_BASE_URL}/reverse`,
+        {
+          params: {
+            lat: latNum,
+            lon: lonNum,
+            limit: 1,
+            appid: OPENWEATHER_API_KEY
+          },
+          timeout: 10000
+        }
+      );
+
+      resolvedLocation = reverseGeocode.data?.[0] || null;
+    } catch (reverseError) {
+      console.error(`Reverse geocoding error for ${lat}, ${lon}:`, reverseError.message, reverseError.response?.status, reverseError.response?.data);
+    }
+
+    const resolvedLabel = formatLocationLabel(resolvedLocation);
+
+    // Use closest city if reverse geocoding does not return a useful result
     let mockCity = closestCity?.name || 'Your Location';
     let mockCountry = closestCity?.country || 'IN';
 
@@ -249,8 +291,9 @@ export const getWeatherByCoordinates = async (req, res) => {
       );
 
       const weatherData = {
-        city: response.data.name,
-        country: response.data.sys.country,
+        city: resolvedLocation?.name || response.data.name,
+        country: resolvedLocation?.country || response.data.sys.country,
+        locationLabel: resolvedLabel || response.data.name,
         temperature: response.data.main.temp,
         feelsLike: response.data.main.feels_like,
         humidity: response.data.main.humidity,
@@ -262,17 +305,24 @@ export const getWeatherByCoordinates = async (req, res) => {
         longitude: response.data.coord.lon
       };
 
-      // Save to database (non-blocking)
-      Weather.create(weatherData).catch(err => {
-        console.log('Database save skipped:', err.message);
-      });
 
       res.json(weatherData);
     } catch (apiError) {
+      // Log the actual error for debugging
+      console.error(`API Error for coordinates ${lat}, ${lon}:`, apiError.message, apiError.response?.status, apiError.response?.data);
+
+      if (apiError.response?.status === 401) {
+        return res.status(502).json({
+          message: 'OpenWeather API key is invalid or not authorized. Update OPENWEATHER_API_KEY in backend/.env.'
+        });
+      }
+
+      console.log(`Falling back to mock geolocation data for: ${latNum}, ${lonNum} (${mockCity}, ${mockCountry})`);
       // Fallback to mock data
       const mockData = {
         city: mockCity,
         country: mockCountry,
+        locationLabel: resolvedLabel || `${mockCity}, ${mockCountry}`,
         temperature: 28,
         feelsLike: 30,
         humidity: 70,
@@ -283,7 +333,6 @@ export const getWeatherByCoordinates = async (req, res) => {
         latitude: latNum,
         longitude: lonNum
       };
-      console.log(`Using mock geolocation data for: ${latNum}, ${lonNum} (${mockCity}, ${mockCountry})`);
       res.json(mockData);
     }
   } catch (error) {
@@ -345,8 +394,16 @@ export const getForecast = async (req, res) => {
 
       res.json(forecast);
     } catch (apiError) {
-      // Fallback to mock forecast
-      console.log(`Using mock forecast for: ${city}`);
+      // Log the actual error for debugging
+      console.error(`API Error for forecast '${city}':`, apiError.message, apiError.response?.status, apiError.response?.data);
+
+      if (apiError.response?.status === 401) {
+        return res.status(502).json({
+          message: 'OpenWeather API key is invalid or not authorized. Update OPENWEATHER_API_KEY in backend/.env.'
+        });
+      }
+
+      console.log(`Falling back to mock forecast for: ${city}`);
       res.json(generateMockForecast());
     }
   } catch (error) {
@@ -357,14 +414,9 @@ export const getForecast = async (req, res) => {
 // Get weather history
 export const getWeatherHistory = async (req, res) => {
   try {
-    const { city, limit = 10 } = req.query;
-
-    const query = city ? { city } : {};
-    const history = await Weather.find(query)
-      .sort({ timestamp: -1 })
-      .limit(parseInt(limit));
-
-    res.json(history);
+    // No database, return empty history
+    // Weather data is cached by the frontend or retrieved fresh from OpenWeatherAPI
+    res.json([]);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching history', error: error.message });
   }

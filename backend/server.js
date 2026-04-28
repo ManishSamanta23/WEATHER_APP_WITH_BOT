@@ -1,5 +1,4 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import weatherRoutes from './routes/weatherRoutes.js';
@@ -11,27 +10,10 @@ dotenv.config();
 
 const app = express();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/weather-app';
-
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Database Connection (non-fatal for local/dev usage)
-mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000
-})
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log('MongoDB connection error:', err));
-
-mongoose.connection.on('error', (err) => {
-  console.log('MongoDB runtime error:', err.message);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected. API continues with mock/fallback responses.');
-});
 
 // Routes
 app.use('/api/weather', weatherRoutes);

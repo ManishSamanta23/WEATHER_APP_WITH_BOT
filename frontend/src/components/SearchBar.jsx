@@ -94,7 +94,20 @@ const SearchBar = ({ onWeatherUpdate, onCityResolved, selectedCity }) => {
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSearch} className="surface-card p-4 sm:p-5 dark:bg-slate-900/70 dark:border-slate-700/50">
+      <form
+        onSubmit={handleSearch}
+        className="surface-card overflow-hidden p-4 sm:p-5 dark:bg-slate-900/70 dark:border-slate-700/50"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-600 dark:text-teal-400">Live weather</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-white sm:text-xl">Search by city or use your location</h2>
+          </div>
+          <div className="rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700/50 dark:bg-slate-800/70 dark:text-slate-300">
+            Powered by OpenWeather
+          </div>
+        </div>
+
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <input
@@ -145,38 +158,49 @@ const SearchBar = ({ onWeatherUpdate, onCityResolved, selectedCity }) => {
       )}
 
       {weather && (
-        <div className="surface-card mt-6 p-5 sm:p-7 dark:bg-slate-900/70 dark:border-slate-700/50">
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-5xl leading-none sm:text-6xl">{getWeatherIcon(weather.description)}</p>
-              <h2 className="mt-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-4xl">
-                {weather.city}, {weather.country}
-              </h2>
-              <p className="mt-1 text-sm capitalize muted-text dark:text-slate-400">{weather.description}</p>
-            </div>
+        <div className="surface-card mt-6 overflow-hidden dark:bg-slate-900/70 dark:border-slate-700/50">
+          <div className="relative p-6 sm:p-8">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-teal-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute -left-20 -bottom-10 h-40 w-40 rounded-full bg-orange-300/20 blur-3xl" />
 
-            <div>
-              <p className="text-5xl font-bold text-slate-900 dark:text-white sm:text-6xl">{weather.temperature}°C</p>
-              <p className="text-right text-xs uppercase tracking-wide muted-text dark:text-slate-400">Current temperature</p>
-            </div>
-          </div>
+            <div className="relative space-y-8">
+              {/* Main weather summary */}
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+                <div className="flex gap-4">
+                  <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-3xl border border-white/40 bg-slate-900/95 text-6xl shadow-xl dark:bg-slate-800">
+                    {getWeatherIcon(weather.description)}
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600 dark:text-teal-400">
+                      {weather.locationLabel || `${weather.city}, ${weather.country}`}
+                    </p>
+                    <h2 className="mt-2 text-5xl font-bold leading-none text-slate-900 dark:text-white sm:text-6xl">
+                      {weather.temperature}°C
+                    </h2>
+                    <p className="mt-3 text-sm capitalize muted-text dark:text-slate-400">{weather.description}</p>
+                  </div>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 dark:border-slate-700/50 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-wide muted-text dark:text-slate-400">Feels like</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{weather.feelsLike}°C</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 dark:border-slate-700/50 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-wide muted-text dark:text-slate-400">Humidity</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{weather.humidity}%</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 dark:border-slate-700/50 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-wide muted-text dark:text-slate-400">Wind speed</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{weather.windSpeed}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 dark:border-slate-700/50 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-wide muted-text dark:text-slate-400">Pressure</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{weather.pressure}</p>
+              {/* Metric cards - clean 2x2 grid */}
+              <div className="grid grid-cols-2 gap-4 sm:gap-5">
+                <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-5 sm:p-6 dark:border-slate-700/50 dark:bg-slate-800/70">
+                  <p className="text-xs font-semibold uppercase tracking-wider muted-text dark:text-slate-400">Feels like</p>
+                  <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">{weather.feelsLike}°C</p>
+                </div>
+                <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-5 sm:p-6 dark:border-slate-700/50 dark:bg-slate-800/70">
+                  <p className="text-xs font-semibold uppercase tracking-wider muted-text dark:text-slate-400">Humidity</p>
+                  <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">{weather.humidity}%</p>
+                </div>
+                <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-5 sm:p-6 dark:border-slate-700/50 dark:bg-slate-800/70">
+                  <p className="text-xs font-semibold uppercase tracking-wider muted-text dark:text-slate-400">Wind speed</p>
+                  <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">{Math.round(weather.windSpeed * 3.6)} km/h</p>
+                </div>
+                <div className="rounded-3xl border border-slate-200/80 bg-white/85 p-5 sm:p-6 dark:border-slate-700/50 dark:bg-slate-800/70">
+                  <p className="text-xs font-semibold uppercase tracking-wider muted-text dark:text-slate-400">Pressure</p>
+                  <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">{weather.pressure} hPa</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

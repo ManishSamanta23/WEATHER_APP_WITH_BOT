@@ -10,7 +10,7 @@ const useWeather = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/weather/city/${city}`);
+      const response = await axios.get(`/api/weather/city/${encodeURIComponent(city)}`);
       setWeather(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch weather');

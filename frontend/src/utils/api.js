@@ -3,13 +3,13 @@ import axios from 'axios';
 const API_BASE_URL = '/api';
 
 export const fetchWeatherByCity = (city) => 
-  axios.get(`${API_BASE_URL}/weather/city/${city}`);
+  axios.get(`${API_BASE_URL}/weather/city/${encodeURIComponent(city)}`);
 
 export const fetchWeatherByCoordinates = (lat, lon) => 
   axios.get(`${API_BASE_URL}/weather/coordinates/${lat}/${lon}`);
 
 export const fetchForecast = (city) => 
-  axios.get(`${API_BASE_URL}/weather/forecast/${city}`);
+  axios.get(`${API_BASE_URL}/weather/forecast/${encodeURIComponent(city)}`);
 
 export const fetchCities = (search = '') => 
   axios.get(`${API_BASE_URL}/cities`, { params: { search } });

@@ -44,18 +44,21 @@ const Home = () => {
       <Header isDarkMode={isDarkMode} onToggleDarkMode={handleToggleDarkMode} />
       
       <main className="relative mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
+          <div className="space-y-6">
             <SearchBar
               onWeatherUpdate={setCurrentWeather}
               onCityResolved={setSelectedCity}
               selectedCity={selectedCity}
             />
-            <Forecast city={selectedCity} />
           </div>
-          
+
           <div className="lg:sticky lg:top-6 lg:self-start">
             <CityList onCitySelect={handleCitySelect} />
+          </div>
+
+          <div className="lg:col-span-2">
+            <Forecast city={selectedCity} />
           </div>
         </div>
       </main>
