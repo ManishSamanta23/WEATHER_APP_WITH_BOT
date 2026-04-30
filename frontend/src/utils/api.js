@@ -21,3 +21,6 @@ export const fetchWeatherHistory = (city = '', limit = 10) =>
 
 export const fetchCitySuggestions = (query) =>
   axios.get(`${API_BASE_URL}/weather/search-cities/${encodeURIComponent(query)}`);
+
+export const sendChatMessage = (message, context) =>
+  axios.post(`${API_BASE_URL}/chat/send`, { message, context });

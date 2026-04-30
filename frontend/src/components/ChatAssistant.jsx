@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import { sendChatMessage } from '../utils/api';
 
 const ChatAssistant = ({ weather }) => {
   const [messages, setMessages] = useState([
@@ -32,15 +32,12 @@ const ChatAssistant = ({ weather }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/chat/send', {
-        message: userMessage,
-        context: {
-          city: weather?.city,
-          temperature: weather?.temperature,
-          condition: weather?.description,
-          humidity: weather?.humidity,
-          windSpeed: weather?.windSpeed
-        }
+      const response = await sendChatMessage(userMessage, {
+        city: weather?.city,
+        temperature: weather?.temperature,
+        condition: weather?.description,
+        humidity: weather?.humidity,
+        windSpeed: weather?.windSpeed
       });
 
       const botMessage = {
