@@ -1,4 +1,8 @@
 const getWeatherIcon = (description) => {
+  if (typeof description !== 'string') {
+    return '🌤️';
+  }
+
   const desc = description.toLowerCase();
   
   if (desc.includes('cloud')) return '☁️';

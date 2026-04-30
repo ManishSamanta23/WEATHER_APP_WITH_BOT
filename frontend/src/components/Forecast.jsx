@@ -13,9 +13,11 @@ const Forecast = ({ city }) => {
         setLoading(true);
         try {
           const response = await fetchForecast(city);
-          setForecast(response.data || []);
+          const forecastPayload = Array.isArray(response.data) ? response.data : [];
+          setForecast(forecastPayload);
         } catch (error) {
           console.error('Error fetching forecast:', error);
+          setForecast([]);
         } finally {
           setLoading(false);
         }
